@@ -7,6 +7,7 @@ package id.co.indocyber.view;
 
 import id.co.model.Category;
 import id.co.model.WordModel;
+import id.co.controller.WorldModelGenerator;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
@@ -22,18 +23,22 @@ import javax.swing.JOptionPane;
  *
  * @author user
  */
-public class GuessingGame extends javax.swing.JFrame {
+public class GuessingGameController extends javax.swing.JFrame {
 
     WordModel modelWorld;
     EntityManagerFactory emf;
+    List<WordModel> bankSoal;
+    WorldModelGenerator wmg ;
 
     /**
      * Creates new form GuessingGame
      */
-    public GuessingGame() throws IOException {
+    public GuessingGameController() throws IOException {
         initComponents();
         emf = Persistence.createEntityManagerFactory("SwingGuessWordSpringPU");
-        //category(); Pemanggilan cara kedua
+        wmg = new WorldModelGenerator();
+        cmbKategory.setModel(wmg.getWord());
+//category(); Pemanggilan cara kedua
     }
 
     /**
@@ -84,8 +89,6 @@ public class GuessingGame extends javax.swing.JFrame {
                 btnHintActionPerformed(evt);
             }
         });
-
-        cmbKategory.setModel(getWord());
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -139,31 +142,16 @@ public class GuessingGame extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private int kategori() {
-        int kategori;
-        String category = (String) cmbKategory.getSelectedItem();
-        System.out.println("Category yang dipilih: " + category);
-        // DARI CATEGORY NAME KITA BISA MENGAMBIL LAGI OBJECT WORDCATEGORY
-        EntityManager em = emf.createEntityManager();
-        Query query = em.createQuery("Select wc from Category wc where wc.categoryName = :categoryName");
-        query.setParameter("categoryName", category);
-        Category wordCategory = (Category) query.getSingleResult();
-        return kategori = wordCategory.getId();
-    }
 
     private void btnMulaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMulaiActionPerformed
-        EntityManager em = emf.createEntityManager();
-        Category wm = em.find(Category.class, kategori());
-        List<WordModel> wordModels = wm.getWordModels();
-        em.close();
-        int soalIndex = (int) Math.floor(Math.random() * wordModels.size());
-        modelWorld = wordModels.get(soalIndex);
+        bankSoal = wmg.kategori((String) cmbKategory.getSelectedItem());
+        int soalIndex = (int) Math.floor(Math.random() * bankSoal.size());
+        modelWorld = bankSoal.get(soalIndex);
         txtSoal.setText(modelWorld.acakHuruf());
     }//GEN-LAST:event_btnMulaiActionPerformed
 
     private void btnCheckAnswerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCheckAnswerActionPerformed
         try {
-            //String jawaban = txtJawaban.getText().trim();
             int i = 0;
             modelWorld.setJawaban(txtJawaban.getText().trim());
             if (modelWorld.cekJawaban()) {
@@ -202,23 +190,24 @@ public class GuessingGame extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(GuessingGame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(GuessingGameController.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(GuessingGame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(GuessingGameController.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(GuessingGame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(GuessingGameController.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(GuessingGame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(GuessingGameController.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    new GuessingGame().setVisible(true);
+                    new GuessingGameController().setVisible(true);
                 } catch (IOException ex) {
-                    Logger.getLogger(GuessingGame.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(GuessingGameController.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
@@ -235,39 +224,5 @@ public class GuessingGame extends javax.swing.JFrame {
     private javax.swing.JTextField txtJawaban;
     private javax.swing.JTextField txtSoal;
     // End of variables declaration//GEN-END:variables
-    //Cara Mendapatkan Nilai combobox dari table
-    
-    //Cara Pertama, untuk pemanggilanya dengan cara properties dan pilih model
-    private List<Category> getWordCategories() {
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("SwingGuessWordSpringPU");
-        EntityManager em = emf.createEntityManager();
-        List<Category> wordcategories = em.createQuery("Select c from Category c").getResultList();
-        return wordcategories;
-    }
-    
 
-    private String[] getWordCategoryNames() {
-        List<Category> wordCats = getWordCategories();
-        int size = wordCats.size();
-        String[] categoryNames = new String[size];
-        for (int i = 0; i < size; i++) {
-            categoryNames[i] = wordCats.get(i).getCategoryName();
-        }
-        System.out.println("Jumlah kategori: " + size);
-        return categoryNames;
-    }
-    //Lalu pilih custom code dan copy kata getWord()
-    private DefaultComboBoxModel getWord(){
-        return new DefaultComboBoxModel(getWordCategoryNames());
-    }
-    
-    //cara kedua
-    private void category() {               
-        EntityManager em = emf.createEntityManager();
-        List<Category> wordcategories = em.createQuery("Select c from Category c").getResultList();
-        for (Category wordcategory : wordcategories) {
-            cmbKategory.addItem(wordcategory.getCategoryName());
-        }
-
-    }
 }

@@ -7,6 +7,8 @@ package id.co.indocyber.view;
 
 import id.co.model.Category;
 import id.co.model.WordModel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -15,6 +17,10 @@ import java.util.logging.Logger;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.Query;
+import javax.swing.Action;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 
 /**
@@ -22,16 +28,17 @@ import javax.swing.JOptionPane;
  * @author user
  */
 public class GuessingGame extends javax.swing.JFrame {
-WordModel modelWorld;
 
-/**
+    WordModel modelWorld;
+    EntityManagerFactory emf;
+
+    /**
      * Creates new form GuessingGame
      */
-    
-
     public GuessingGame() throws IOException {
         initComponents();
-
+        emf = Persistence.createEntityManagerFactory("SwingGuessWordSpringPU");
+        category();
 
     }
 
@@ -52,7 +59,7 @@ WordModel modelWorld;
         btnMulai = new javax.swing.JButton();
         btnHint = new javax.swing.JButton();
         lblHint = new javax.swing.JLabel();
-        cmbKategory = new javax.swing.JComboBox<String>();
+        cmbKategory = new javax.swing.JComboBox<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -84,7 +91,11 @@ WordModel modelWorld;
             }
         });
 
-        cmbKategory.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Hewan", "Makanan" }));
+        cmbKategory.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cmbKategoryActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -94,8 +105,8 @@ WordModel modelWorld;
                 .addContainerGap()
                 .addComponent(btnMulai)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(cmbKategory, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(58, 58, 58)
+                .addComponent(cmbKategory, javax.swing.GroupLayout.PREFERRED_SIZE, 85, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(35, 35, 35)
                 .addComponent(btnHint)
                 .addGap(58, 58, 58))
             .addGroup(layout.createSequentialGroup()
@@ -138,30 +149,29 @@ WordModel modelWorld;
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btnMulaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMulaiActionPerformed
-        int kategori = 0; 
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("SwingGuessWordSpringPU");
+    private int kategori() {
+        int kategori;
+        String category = (String) cmbKategory.getSelectedItem();
+        System.out.println("Category yang dipilih: " + category);
+        // DARI CATEGORY NAME KITA BISA MENGAMBIL LAGI OBJECT WORDCATEGORY
         EntityManager em = emf.createEntityManager();
-        if(cmbKategory.getSelectedItem().equals("Hewan")){
-            kategori = 1;
-        } else if(cmbKategory.getSelectedItem().equals("Makanan")){
-            kategori = 2;
-        }
-        
-        Category wm = em.find(Category.class, kategori);
+        Query query = em.createQuery("Select wc from Category wc where wc.categoryName = :categoryName");
+        query.setParameter("categoryName", category);
+        Category wordCategory = (Category) query.getSingleResult();
+        return kategori = wordCategory.getId();
+    }
+
+    private void btnMulaiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnMulaiActionPerformed
+        EntityManager em = emf.createEntityManager();
+        Category wm = em.find(Category.class, kategori());
         List<WordModel> wordModels = wm.getWordModels();
         for (WordModel wordModel : wordModels) {
             System.out.println(wordModel.getBasicWord());
         }
-        
-            
         em.close();
-        emf.close();
-
         int soalIndex = (int) Math.floor(Math.random() * wordModels.size());
         modelWorld = wordModels.get(soalIndex);
         txtSoal.setText(modelWorld.acakHuruf());
-
     }//GEN-LAST:event_btnMulaiActionPerformed
 
     private void btnCheckAnswerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCheckAnswerActionPerformed
@@ -188,6 +198,10 @@ WordModel modelWorld;
             JOptionPane.showMessageDialog(rootPane, "Klik Tombol Mulai");
         }
     }//GEN-LAST:event_btnHintActionPerformed
+
+    private void cmbKategoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cmbKategoryActionPerformed
+
+    }//GEN-LAST:event_cmbKategoryActionPerformed
 
     /**
      * @param args the command line arguments
@@ -218,7 +232,7 @@ WordModel modelWorld;
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {               
+            public void run() {
                 try {
                     new GuessingGame().setVisible(true);
                 } catch (IOException ex) {
@@ -239,4 +253,33 @@ WordModel modelWorld;
     private javax.swing.JTextField txtJawaban;
     private javax.swing.JTextField txtSoal;
     // End of variables declaration//GEN-END:variables
+    private List<Category> getWordCategories() {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("SwingGuessWordSpringPU");
+        EntityManager em = emf.createEntityManager();
+        List<Category> wordcategories = em.createQuery("Select c from Category c").getResultList();
+        return wordcategories;
+    }
+
+    private String[] getWordCategoryNames() {
+        List<Category> wordCats = getWordCategories();
+        int size = wordCats.size();
+        String[] categoryNames = new String[size];
+        for (int i = 0; i < size; i++) {
+            categoryNames[i] = wordCats.get(i).getCategoryName();
+        }
+        System.out.println("Jumlah kategori: " + size);
+        return categoryNames;
+    }
+    
+    
+
+    private void category() {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("SwingGuessWordSpringPU");
+        EntityManager em = emf.createEntityManager();
+        List<Category> wordcategories = em.createQuery("Select c from Category c").getResultList();
+        for (Category wordcategory : wordcategories) {
+            cmbKategory.addItem(wordcategory.getCategoryName());
+        }
+
+    }
 }

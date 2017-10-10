@@ -21,16 +21,16 @@ public class Coba {
         
         em.getTransaction().begin();
         Category hewan = new Category();
-        hewan.setCategoryName("Makanan");
+        hewan.setCategoryName("Buah");
         em.persist(hewan);
         
         WordModel wm = new WordModel();
-        wm.setBasicWord("Rendang");
-        wm.setHint("Khas Padang");
+        wm.setBasicWord("Apel");
+        wm.setHint("Manis");
         
         WordModel wm2 = new WordModel();
-        wm2.setBasicWord("Sate");
-        wm2.setHint("Te... Sate....");
+        wm2.setBasicWord("Durian");
+        wm2.setHint("Baunya Banget");
         
         em.persist(wm);
         em.persist(wm2);
